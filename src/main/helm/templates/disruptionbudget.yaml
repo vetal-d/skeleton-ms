@@ -1,0 +1,19 @@
+# PodDisruptionBudget to prevent degrading the server cluster through
+# voluntary cluster changes.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+{{ if .Values.PodDisruptionBudget }}
+{{- with .Values.PodDisruptionBudget }}
+  {{- toYaml . | indent 2 }}
+{{- end }}
+{{ else }}
+  minAvailable: 2
+  selector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6  }}
+{{ end }}

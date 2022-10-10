@@ -1,0 +1,55 @@
+<included>
+    <springProperty scope="context" name="spring.application.name" source="spring.application.name"/>
+
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <threadName/>
+                <logLevel/>
+                <logLevelValue/>
+                <loggerName/>
+                <message/>
+                <mdc/>
+                <pattern>
+                    <pattern>
+                        {"service-name": "${spring.application.name}"}
+                    </pattern>
+                </pattern>
+                <arguments/>
+                <stackTrace>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <exclude>^jdk\.internal\.reflect</exclude>
+                        <exclude>^java\.lang\.reflect\.Method\.invoke</exclude>
+                        <exclude>^org\.springframework\.aop</exclude>
+                        <exclude>^net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
+                        <rootCauseFirst>true</rootCauseFirst>
+                    </throwableConverter>
+                </stackTrace>
+                <stackHash/>
+                <throwableClassName>
+                    <useSimpleClassName>false</useSimpleClassName>
+                </throwableClassName>
+                <throwableRootCauseClassName>
+                    <useSimpleClassName>false</useSimpleClassName>
+                </throwableRootCauseClassName>
+                <callerData>
+                    <fieldName>caller</fieldName>
+                    <classFieldName>class</classFieldName>
+                    <methodFieldName>method</methodFieldName>
+                    <lineFieldName>line</lineFieldName>
+                    <fileFieldName>file</fileFieldName>
+                </callerData>
+            </providers>
+        </encoder>
+    </appender>
+
+    <appender name="asyncConsoleAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="consoleAppender"/>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="asyncConsoleAppender"/>
+    </root>
+    <logger name="ru.gpb.dmc" level="DEBUG"/>
+</included>
