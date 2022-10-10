@@ -3,10 +3,10 @@ updateStrategy:
   type: Recreate
 
 image:
-  repository: ${repository}
+  registry: ${docker.registry}
+  repository: ${docker.repository}
+  tag: ${project.version}
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag:
 
 imagePullSecrets: []
 nameOverride: ""

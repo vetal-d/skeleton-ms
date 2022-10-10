@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ru.poc.kunernetes-client-test</groupId>
+    <groupId>ru.gpb.dmc</groupId>
     <artifactId>skeleton-ms</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <parent>
@@ -13,8 +13,10 @@
     </parent>
 
     <properties>
+        <docker.registry>test</docker.registry>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <java.version>17</java.version>
-        <spring-boot.version>2.7.3</spring-boot.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
@@ -78,14 +80,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M6</version>
             </plugin>
 
+            <!-- Docker image -->
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
@@ -95,10 +92,9 @@
                         <image>eclipse-temurin:17-jre</image>
                     </from>
                     <to>
-                        <image>kubernetes-client-test</image>
-                        <tags>
-                            <tag>${project.version}</tag>
-                        </tags>
+
+                        repository:
+                        <image>${docker.registry}/${docker.repository}/${project.artifactId}:${project.version}</image>
                     </to>
                     <container>
                         <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
@@ -119,12 +115,60 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Helm chart -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>helm-package</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>docker.repository</name>
+                            <value>${project.groupId}</value>
+                            <regex>\.</regex>
+                            <replacement>/</replacement>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-helm-files</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <delimiters>
+                                <delimiter>${*}</delimiter>
+                            </delimiters>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/helm</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${project.build.directory}/preprocessed-helm</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>io.kokuwa.maven</groupId>
                 <artifactId>helm-maven-plugin</artifactId>
                 <version>${helm-maven-plugin.version}</version>
                 <configuration>
-                    <chartDirectory>src/main/helm</chartDirectory>
+                    <chartDirectory>${project.build.directory}/preprocessed-helm</chartDirectory>
                     <chartVersion>${project.version}</chartVersion>
                     <appVersion>${project.version}</appVersion>
                     <useLocalHelmBinary>true</useLocalHelmBinary>
@@ -159,6 +203,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Testing -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M7</version>
             </plugin>
         </plugins>
     </build>
