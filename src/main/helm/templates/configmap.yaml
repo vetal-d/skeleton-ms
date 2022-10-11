@@ -5,6 +5,10 @@ metadata:
   labels:
     {{- include "service.labels" . | nindent 4 }}
 data:
+  logback-spring.xml: |-
+{{ include (print $.Template.BasePath "/_helper_logback_spring.txt") . | indent 4 }}
+  logback-include.xml: |-
+{{ include (print $.Template.BasePath "/_helper_logback_include.txt") . | indent 4 }}
 {{- with .Values.config.env }}
 {{ toYaml . | indent 2 }}
 {{- end }}

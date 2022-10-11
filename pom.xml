@@ -13,7 +13,13 @@
     </parent>
 
     <properties>
-        <docker.registry>test</docker.registry>
+        <!--docker.registry.url>dmc-docker.gpb.ru</docker.registry.url>
+        <docker.registry.username>dummy</docker.registry.username>
+        <docker.registry.password>dummy</docker.registry.password>
+        <helm.registry.url>https://repo.example.com/nexus/dmc-helm</helm.registry.url>
+        <helm.registry.username>dummy</helm.registry.username>
+        <helm.registry.password>dummy</helm.registry.password-->
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <java.version>17</java.version>
@@ -84,6 +90,47 @@
 
             <!-- Docker image -->
             <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>2.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <scripts>
+                        <script><![CDATA[
+                        def dockerPackage = project.groupId.replaceAll("\\.", "/")
+                        def dockerRegistry = project.properties["docker.registry.url"]
+                        if (dockerRegistry) {
+                            project.properties.setProperty("docker.image.name", "${dockerRegistry}/${dockerPackage}/${project.artifactId}:${project.version}")
+                            project.properties.setProperty("docker.image.registry", dockerRegistry)
+                            project.properties.setProperty("docker.image.repository", "${dockerPackage}/${project.artifactId}")
+                        } else {
+                            project.properties.setProperty("docker.image.name", "${dockerPackage}/${project.artifactId}:${project.version}")
+                            project.properties.setProperty("docker.image.registry", "")
+                            project.properties.setProperty("docker.image.repository", "${dockerPackage}/${project.artifactId}")
+                        }
+                        project.properties.setProperty("docker.image.version", project.version)
+
+                        log.info("Calculated image name is " + project.properties['docker.image.name'])
+          ]]></script>
+                    </scripts>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>3.0.13</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
                 <version>${jib-maven-plugin.version}</version>
@@ -92,9 +139,11 @@
                         <image>eclipse-temurin:17-jre</image>
                     </from>
                     <to>
-
-                        repository:
-                        <image>${docker.registry}/${docker.repository}/${project.artifactId}:${project.version}</image>
+                        <image>${docker.image.name}</image>
+                        <auth>
+                            <username>${docker.registry.username}</username>
+                            <password>${docker.registry.password}</password>
+                        </auth>
                     </to>
                     <container>
                         <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
@@ -117,25 +166,6 @@
             </plugin>
 
             <!-- Helm chart -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>helm-package</id>
-                        <goals>
-                            <goal>regex-property</goal>
-                        </goals>
-                        <configuration>
-                            <name>docker.repository</name>
-                            <value>${project.groupId}</value>
-                            <regex>\.</regex>
-                            <replacement>/</replacement>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -172,6 +202,32 @@
                     <chartVersion>${project.version}</chartVersion>
                     <appVersion>${project.version}</appVersion>
                     <useLocalHelmBinary>true</useLocalHelmBinary>
+                    <skipTemplate>false</skipTemplate>
+                    <addDefaultRepo>false</addDefaultRepo>
+                    <addUploadRepos>true</addUploadRepos>
+                    <!--helmExtraRepos>
+                        <helmRepo>
+                            <name>gpb</name>
+                            <url>${helm.registry.url}</url>
+                            <type>NEXUS</type>
+                            <username>${helm.registry.username}</username>
+                            <password>${helm.registry.password}</password>
+                        </helmRepo>
+                    </helmExtraRepos-->
+                    <uploadRepoStable>
+                        <name>gpb</name>
+                        <url>${helm.registry.url}</url>
+                        <type>NEXUS</type>
+                        <username>${helm.registry.username}</username>
+                        <password>${helm.registry.password}</password>
+                    </uploadRepoStable>
+                    <uploadRepoSnapshot>
+                        <name>gpb</name>
+                        <url>${helm.registry.url}</url>
+                        <type>NEXUS</type>
+                        <username>${helm.registry.username}</username>
+                        <password>${helm.registry.password}</password>
+                    </uploadRepoSnapshot>
                 </configuration>
                 <executions>
                     <execution>

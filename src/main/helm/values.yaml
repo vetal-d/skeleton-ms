@@ -3,9 +3,9 @@ updateStrategy:
   type: Recreate
 
 image:
-  registry: ${docker.registry}
-  repository: ${docker.repository}
-  tag: ${project.version}
+  registry: ${docker.image.registry}
+  repository: ${docker.image.repository}
+  tag: ${docker.image.version}
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -45,6 +45,10 @@ service:
 persistence:
   - name: tmp
     mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
 
 ingress:
   enabled: false

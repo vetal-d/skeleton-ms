@@ -60,3 +60,17 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Image properties
+*/}}
+{{- define "service.image" -}}
+{{- with . }}
+{{- if empty .registry }}
+image: {{ printf "%s:%s" .repository .tag | quote }}
+{{- else }}
+image: {{ printf "%s/%s:%s" .registry .repository .tag | quote }}
+{{- end }}
+imagePullPolicy: {{ .pullPolicy | quote }}
+{{- end }}
+{{- end }}
